@@ -103,6 +103,16 @@ function maxRange(hidId) {
   return (pid === 0x0020 || pid === 0x0006 || pid === 0x0007) ? 2530 : 1090
 }
 
+// Strip angle brackets and control characters from any text that did not come
+// from this plugin (a nickname, or a name read from the device). Omarchy's shared
+// tooltip and button components render their text in a format the plugin can't
+// set, so markup-shaped input must be neutralised before it gets there.
+function plain(value) {
+  return String(value === undefined || value === null ? "" : value)
+    .replace(/[<>\u0000-\u001f\u007f]/g, "")
+    .trim()
+}
+
 function disconnectedState() {
   return { connected: false, name: "", range: -1, wheelId: "", wheelName: "", fw: "", tuning: {}, writable: false, maxRange: 1090 }
 }
@@ -116,11 +126,11 @@ function parseState(text) {
   })
   if (kv.connected !== "1") return s
   s.connected = true
-  s.name = baseName(kv.hid_id, kv.name)
+  s.name = plain(baseName(kv.hid_id, kv.name))
   var r = parseInt(kv.range)
   s.range = isNaN(r) ? -1 : r
   s.wheelId = (kv.wheel_id || "").toLowerCase()
-  s.wheelName = wheelNames[s.wheelId] || (s.wheelId ? "Unknown rim (" + s.wheelId + ")" : "No rim detected")
+  s.wheelName = wheelNames[s.wheelId] || (s.wheelId ? "Unknown rim (" + plain(s.wheelId) + ")" : "No rim detected")
   s.fw = kv.fw || ""
   s.maxRange = maxRange(kv.hid_id)
   s.writable = kv.tun_writable === "1"

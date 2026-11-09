@@ -164,9 +164,8 @@ inside the bar section it sits in (usually `bar.layout.right`):
 | `nickS1` … `nickS4` | string | none | Nickname for each custom preset, up to 24 characters. Easiest set from the panel's nickname box. Auto has no nickname. |
 
 Keys you haven't set use their default, so a fresh install has none of them.
-Changes made through `omarchy bar set` (below) or the panel's nickname box
-apply straight away. If you edit `shell.json` by hand and nothing changes,
-run `omarchy-restart-shell`.
+The shell hot-reloads `shell.json` on save, so edits (by hand, through
+`omarchy bar set` below, or from the panel's nickname box) apply straight away.
 
 ### From the command line
 
@@ -229,6 +228,21 @@ tuning value) and prints `key=value` lines. `Panel.qml` parses them with
 `/sys/class/ftec_tuning/<device>/<NAME>`, restricted to a fixed list of
 parameter names, and the panel re-reads the wheel shortly after to show what
 the wheel actually accepted.
+
+## Development
+
+The plugin folder is a plain git checkout. Saving a file under
+`~/.config/omarchy/plugins/` reloads the plugin; if a change doesn't apply, run
+`omarchy-shell shell rescanPlugins` or `omarchy-restart-shell`.
+
+```bash
+omarchy plugin validate .   # manifest check, same one the store runs
+node --test tests/          # Model.js unit tests, no dependencies
+```
+
+Text that doesn't come from the plugin (nicknames, names read from the
+device) is stripped of markup characters before it reaches Omarchy's shared
+tooltips, and every `Text` in the panel is `PlainText`.
 
 ## Limitations
 

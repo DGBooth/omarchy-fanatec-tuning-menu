@@ -47,7 +47,7 @@ Panel {
   // and tooltip. Raw slot 2..5 = S1..S4 (slot 1 is Auto, which has no nickname).
   function nickFor(slot) {
     if (slot === undefined || slot < 2) return ""
-    return String(setting("nickS" + (slot - 1), "")).trim()
+    return Model.plain(setting("nickS" + (slot - 1), ""))
   }
 
   function persistSettings(values) {
@@ -199,17 +199,21 @@ Panel {
         spacing: Style.space(10)
 
         Text {
+
+          textFormat: Text.PlainText
           text: "Fanatec Tuning Menu"
           color: root.barForeground
           font.pixelSize: Style.font.title
           font.bold: true
         }
         Text {
+          textFormat: Text.PlainText
           text: root.isConnected ? "Connected" : "No wheelbase detected"
           color: root.isConnected ? Color.accent : Qt.darker(root.barForeground, 1.4)
           font.pixelSize: Style.font.bodySmall
         }
         Text {
+          textFormat: Text.PlainText
           visible: !root.isConnected
           width: parent.width
           wrapMode: Text.WordWrap
@@ -229,12 +233,14 @@ Panel {
             width: column.width
             spacing: Style.space(8)
             Text {
+              textFormat: Text.PlainText
               width: Style.space(110)
               text: modelData.k
               color: Qt.darker(root.barForeground, 1.4)
               font.pixelSize: Style.font.bodySmall
             }
             Text {
+              textFormat: Text.PlainText
               width: parent.width - Style.space(118)
               text: modelData.v
               color: root.barForeground
@@ -253,6 +259,7 @@ Panel {
           width: parent.width
           spacing: Style.space(4)
           Text {
+            textFormat: Text.PlainText
             width: parent.width
             text: "Preset" + (root.nickFor(root.tuning.SLOT) !== "" ? "  ·  " + root.nickFor(root.tuning.SLOT) : "")
             color: Qt.darker(root.barForeground, 1.4)
@@ -293,6 +300,7 @@ Panel {
           onClicked: root.tuningOpen = !root.tuningOpen
         }
         Text {
+          textFormat: Text.PlainText
           visible: root.isConnected && !root.tuningWritable
           width: parent.width
           wrapMode: Text.WordWrap
@@ -301,6 +309,7 @@ Panel {
           font.pixelSize: Style.font.caption
         }
         Text {
+          textFormat: Text.PlainText
           visible: root.writeError !== ""
           width: parent.width
           wrapMode: Text.WordWrap
@@ -364,6 +373,7 @@ Panel {
                 Row {
                   width: parent.width
                   Text {
+                    textFormat: Text.PlainText
                     width: parent.width - valueText.implicitWidth
                     text: tRow.def.label + (tRow.helpOpen ? "" : "  ⓘ")
                     color: Qt.darker(root.barForeground, 1.4)
@@ -372,6 +382,7 @@ Panel {
                     MouseArea { anchors.fill: parent; onClicked: tRow.helpOpen = !tRow.helpOpen }
                   }
                   Text {
+                    textFormat: Text.PlainText
                     id: valueText
                     text: Model.formatValue(tRow.def, tRow.shown, tRow.maxV)
                     color: root.barForeground
@@ -379,6 +390,7 @@ Panel {
                   }
                 }
                 Text {
+                  textFormat: Text.PlainText
                   visible: tRow.helpOpen
                   width: parent.width
                   wrapMode: Text.WordWrap
@@ -413,6 +425,7 @@ Panel {
               visible: root.tuning.SHO !== undefined
               width: parent.width
               Text {
+                textFormat: Text.PlainText
                 width: parent.width - shoSwitch.width
                 anchors.verticalCenter: parent.verticalCenter
                 text: "Wheel vibration (shock)"
@@ -427,6 +440,7 @@ Panel {
               }
             }
             Text {
+              textFormat: Text.PlainText
               visible: root.tuning.ACP !== undefined
               text: "Analogue paddles"
               color: Qt.darker(root.barForeground, 1.4)
@@ -444,6 +458,7 @@ Panel {
               visible: root.tuning.FFS !== undefined
               width: parent.width
               Text {
+                textFormat: Text.PlainText
                 width: parent.width - ffsSwitch.width
                 anchors.verticalCenter: parent.verticalCenter
                 text: "Force feedback scaling (undocumented)"
@@ -461,6 +476,7 @@ Panel {
               visible: root.tuning.advanced_mode !== undefined
               width: parent.width
               Text {
+                textFormat: Text.PlainText
                 width: parent.width - advSwitch.width
                 anchors.verticalCenter: parent.verticalCenter
                 text: "Advanced mode"
