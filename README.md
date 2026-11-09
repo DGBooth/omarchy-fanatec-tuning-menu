@@ -141,12 +141,84 @@ one:
 The driver only accepts slots 1–5, so a sixth preset (SET 5) can only be
 selected from the wheel itself.
 
-### Settings
+## Customising
 
-| Setting         | Default | Description                                          |
-|-----------------|---------|------------------------------------------------------|
-| Polling interval | 10 s   | How often the widget re-reads the wheel; 2–300 s     |
-| Show preset in bar | on   | Show `A` / `S1` … next to the icon                   |
+### Widget options
+
+Options live on the widget's own entry in `~/.config/omarchy/shell.json`,
+inside the bar section it sits in (usually `bar.layout.right`):
+
+```json
+{
+  "id": "io.github.dgbooth.fanatec-tuning-menu",
+  "pollingInterval": 5,
+  "barShowProfile": false,
+  "nickS1": "AMS2"
+}
+```
+
+| Key              | Type    | Default | What it does                                                        |
+|------------------|---------|---------|---------------------------------------------------------------------|
+| `pollingInterval`| integer | `10`    | Seconds between background re-reads of the wheel (2–300). `0` turns background polling off; the panel still refreshes when opened and on right-click. |
+| `barShowProfile` | boolean | `true`  | Show the active preset (`A`, `S1` … `S4`) next to the bar icon. It is always hidden on a vertical bar. |
+| `nickS1` … `nickS4` | string | none | Nickname for each custom preset, up to 24 characters. Easiest set from the panel's nickname box. Auto has no nickname. |
+
+Keys you haven't set use their default, so a fresh install has none of them.
+Changes made through `omarchy bar set` (below) or the panel's nickname box
+apply straight away. If you edit `shell.json` by hand and nothing changes,
+run `omarchy-restart-shell`.
+
+### From the command line
+
+`omarchy bar set` writes an option for you. Pass `--json` for numbers and
+booleans, otherwise the value is stored as text and a setting like
+`barShowProfile` won't be read as a boolean:
+
+```bash
+ID=io.github.dgbooth.fanatec-tuning-menu
+
+omarchy bar set $ID pollingInterval 5 --json      # poll every 5 s
+omarchy bar set $ID barShowProfile false --json   # hide the preset label
+omarchy bar set $ID nickS2 "Spa wet"              # nickname for S2 (plain text)
+
+omarchy bar get $ID pollingInterval               # prints the value, or exits 1 if unset
+```
+
+`omarchy bar get` only returns options you've set explicitly. For one you
+haven't touched it prints nothing and exits with status 1, which means the
+default applies. To go back to the default, delete the key from the widget's
+entry in `shell.json`.
+
+### Where it sits on the bar
+
+```bash
+omarchy bar move $ID --section right --index 0       # first in the right section
+omarchy bar move $ID --after omarchy.clock           # or next to any other widget
+```
+
+The sections are `left`, `centerBegin`, `center`, `centerEnd`, `tray` and
+`right`. The plugin's default is `right`.
+
+### Changing what the panel shows
+
+The panel's contents are data in `Model.js`, so most tweaks don't touch the
+QML. After editing a file, run `omarchy-restart-shell` to load the change.
+
+- **Settings list**: `tuningDefs` holds each slider's label, range, step,
+  default and help text. Reorder it to reorder the list, or remove an entry to
+  hide a setting you never use. Entries only appear if the driver exposes
+  that setting for your base, so you never need to filter by model.
+- **Preset buttons**: `slotOptions` has the button labels and tooltips.
+- **Names**: `baseNames` (USB product id → base name) and `wheelNames`
+  (rim id → rim name). Use these to name a base or rim the plugin shows as
+  unknown.
+- **Slider limits**: the minimums and maximums follow Fanatec's documented
+  ranges for the DD family. If you raise one, remember the wheel and driver
+  still enforce their own limits and will reject values outside them.
+
+The plugin folder is a git checkout, so `omarchy plugin update` can conflict
+with local edits. If you want your changes to last, fork the repo and
+`omarchy plugin add` your fork instead.
 
 ## How it works
 
