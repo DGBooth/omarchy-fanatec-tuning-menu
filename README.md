@@ -112,8 +112,31 @@ appears at the right end of the bar; move it with
 `omarchy bar move io.github.dgbooth.fanatec-tuning-menu --before omarchy.clock`
 or any other placement.
 
-Update with `omarchy plugin update`, remove with
-`omarchy plugin remove io.github.dgbooth.fanatec-tuning-menu`.
+### Update
+
+```bash
+omarchy plugin update                                          # every git-installed plugin
+omarchy plugin update io.github.dgbooth.fanatec-tuning-menu    # just this one
+```
+
+### Uninstall
+
+```bash
+omarchy plugin remove io.github.dgbooth.fanatec-tuning-menu
+```
+
+It asks you to confirm (add `--yes` to skip the prompt), turns the plugin off
+and deletes its folder. Your wheelbase settings are untouched, since they live
+on the wheel.
+
+Removing does not edit `~/.config/omarchy/shell.json`, so the widget's entry in
+the bar layout stays behind, along with any nicknames and options. For a clean
+removal, open `shell.json` and delete the object with
+`"id": "io.github.dgbooth.fanatec-tuning-menu"` from its bar section. Leave it
+in place if you plan to reinstall, and your nicknames will come back.
+
+The `hid-fanatecff` driver and your `games` group membership are separate from
+the plugin and aren't changed by any of this.
 
 ## Using it
 
