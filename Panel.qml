@@ -61,8 +61,12 @@ Panel {
 
   function setNick(slot, text) {
     if (slot === undefined || slot < 2) return
+    // Only write when the nickname really changed, so focusing the box and
+    // leaving it again never touches shell.json.
+    var clean = Model.plain(text).slice(0, 24)
+    if (clean === nickFor(slot)) return
     var values = {}
-    values["nickS" + (slot - 1)] = String(text).trim()
+    values["nickS" + (slot - 1)] = clean
     persistSettings(values)
   }
 

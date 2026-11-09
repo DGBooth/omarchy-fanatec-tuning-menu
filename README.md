@@ -127,6 +127,19 @@ Update with `omarchy plugin update`, remove with
   stored in the plugin's entry in `~/.config/omarchy/shell.json` as `nickS1` …
   `nickS4`; they are not stored on the wheel.
 
+### What it changes
+
+Nothing is written until you act on a control:
+
+- **On the wheelbase:** moving a slider or switch, choosing a preset, resetting
+  a slider (right-click) or toggling advanced mode sends that one value to the
+  wheelbase, which stores it as part of its tuning menu. The plugin never
+  changes a value on its own, and never on install or enable.
+- **In `~/.config/omarchy/shell.json`:** only this widget's own entry, and only
+  when you edit a nickname or run `omarchy bar set` yourself. Other entries and
+  settings are left as they are.
+- **Nowhere else:** no other files, and no network access.
+
 ### Presets
 
 The driver passes a raw slot number 1–5, and the wheel displays it shifted by
