@@ -12,6 +12,15 @@ The widget only reads and writes those files. It needs no extra daemon.
 > Unofficial. Not affiliated with or endorsed by Fanatec / Endor AG. Changing
 > tuning values sends commands to your hardware, so use it at your own risk.
 
+![Fanatec Tuning Menu panel](preview.png)
+
+The bar shows the active preset next to the icon, and **Edit S1 settings** opens
+the tuning-menu list:
+
+| Bar icon | Settings list |
+|----------|---------------|
+| ![Bar icon with the active preset](screenshots/bar.png) | ![Tuning-menu settings list](screenshots/panel-settings.png) |
+
 ## What it does
 
 - **Bar icon** with the active preset next to it (`A`, `S1` … `S4`). The
