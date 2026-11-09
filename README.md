@@ -53,26 +53,38 @@ base supports.
 
 ### 1. Install the `hid-fanatecff` driver
 
-On Arch / Omarchy it is in the AUR as `hid-fanatecff-dkms`:
+The driver is in the AUR as `hid-fanatecff-dkms`. Install it with Omarchy's
+package tools:
 
 ```bash
-yay -S hid-fanatecff-dkms
+omarchy pkg aur add hid-fanatecff-dkms
 ```
+
+This installs it only if it's missing, and reports an error if it didn't land.
+Prefer to browse? `omarchy pkg aur install` opens a fuzzy-finder; search for
+`hid-fanatecff-dkms` and pick it.
 
 The package builds the `hid_fanatec` kernel module with DKMS and installs a
 udev rule (`/usr/lib/udev/rules.d/99-fanatec.rules`). Upstream project and
 supported-device list: <https://github.com/gotzl/hid-fanatecff>.
 
-Check that it loaded and sees your base:
+Reboot (or replug the base) once it's installed, then check that the driver
+loaded and sees your base:
 
 ```bash
-lsmod | grep hid_fanatec          # the module is loaded
-ls /sys/class/ftec_tuning/        # one entry per tuning-capable base
-cat /sys/bus/hid/drivers/fanatec/*/wheel_id   # id of the attached rim
+omarchy pkg present hid-fanatecff-dkms && echo "package installed"
+lsmod | grep hid_fanatec                        # the module is loaded
+ls /sys/class/ftec_tuning/                      # one entry per tuning-capable base
+cat /sys/bus/hid/drivers/fanatec/*/wheel_id     # id of the attached rim
 ```
 
-If the module is missing after a kernel update, rebuild it with
-`sudo dkms autoinstall` (or reinstall the package), then replug the base.
+DKMS rebuilds the module for new kernels as part of `omarchy update`. If the
+module is missing after a kernel update, reinstall the package to force a
+rebuild, then reboot:
+
+```bash
+omarchy pkg drop hid-fanatecff-dkms && omarchy pkg aur add hid-fanatecff-dkms
+```
 
 ### 2. Add yourself to the `games` group
 
