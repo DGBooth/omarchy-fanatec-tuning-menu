@@ -295,8 +295,10 @@ tooltips, and every `Text` in the panel is `PlainText`.
 ## Limitations
 
 - Developed and tested on one setup: a CSL DD-family base (`0EB7:0020`) with a
-  CSL Steering Wheel GT3. Other bases and rims should work wherever the driver
-  creates the tuning files, but are untested.
+  CSL Steering Wheel GT3. On that setup, values changed in the panel reach
+  the wheel, and values changed on the wheel itself show up in the panel.
+  Other bases and rims should work wherever the driver creates the tuning
+  files, but are untested.
 - The CSL DD, GT DD Pro and ClubSport DD share one USB id, so the base is
   shown as "Fanatec DD Family". Other bases are named from the driver's
   product ids.
