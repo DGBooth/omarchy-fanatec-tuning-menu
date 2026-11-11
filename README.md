@@ -319,8 +319,10 @@ plugin doesn't install or change it. A file with the same name in
 `/etc/udev/rules.d/` takes precedence over the packaged one, so you can adjust it
 locally; if you do, check afterwards that your wheel and your games still work.
 
-The plugin only needs the `games` group for the tuning files. It doesn't depend
-on the `0666` rule.
+This plugin only works with a Fanatec wheelbase and the `hid-fanatecff` driver,
+so anyone using it already has the driver and its udev rule. The plugin adds no
+new device access of its own: it only needs the `games` group for the tuning
+files, and it doesn't depend on the `0666` rule.
 
 ## Limitations
 
