@@ -98,9 +98,7 @@ sudo usermod -aG games "$USER"
 
 Then **reboot**. A plain log-out is often not enough: the long-running
 `systemd --user` manager that your desktop session inherits its groups from
-can survive a log-out and keeps the old group list. If you'd rather not
-reboot, log out, switch to a TTY (Ctrl+Alt+F3), log in, run
-`sudo systemctl stop user@$(id -u)`, then log back in from the display manager.
+can survive a log-out and keeps the old group list.
 
 Check that it took effect:
 
@@ -291,6 +289,38 @@ node --test tests/          # Model.js unit tests, no dependencies
 Text that doesn't come from the plugin (nicknames, names read from the
 device) is stripped of markup characters before it reaches Omarchy's shared
 tooltips, and every `Text` in the panel is `PlainText`.
+
+## Security notes
+
+**What the plugin does.** It runs no privileged commands: no `sudo`, `pkexec`,
+package manager or service control. The `sudo` and package commands in this
+README are for you to run yourself during setup. At runtime it reads a few
+values from sysfs, writes to `/sys/class/ftec_tuning/*` only when you act on a
+control (see [What it changes](#what-it-changes)), and stores its options in its
+own entry in `shell.json`. It makes no network requests. Like every Omarchy
+plugin it runs unsandboxed inside `omarchy-shell`, so read the code if you
+want to be sure.
+
+**The driver's udev rule.** The `hid-fanatecff-dkms` package (0.2.3) installs
+`/usr/lib/udev/rules.d/99-fanatec.rules`, which contains
+
+```
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="0eb7", MODE="0666"
+```
+
+That makes the matching USB device nodes writable by every local account, not
+just members of `games`. While a wheel is connected, any user on the machine could
+reset it or detach its driver, which would disrupt the controller whether or
+not this plugin is installed. On a single-user desktop the practical risk is
+low; on a shared machine it is worth knowing about. The rule belongs to the
+upstream driver ([gotzl/hid-fanatecff](https://github.com/gotzl/hid-fanatecff)),
+and the rule file itself carries a comment that it should be narrowed down. This
+plugin doesn't install or change it. A file with the same name in
+`/etc/udev/rules.d/` takes precedence over the packaged one, so you can adjust it
+locally; if you do, check afterwards that your wheel and your games still work.
+
+The plugin only needs the `games` group for the tuning files. It doesn't depend
+on the `0666` rule.
 
 ## Limitations
 
