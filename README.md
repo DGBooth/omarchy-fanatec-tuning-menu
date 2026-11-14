@@ -51,6 +51,9 @@ base supports.
 
 ## Setup
 
+Setup has five steps. Steps 2 and 3 involve `sudo` and are for you to run;
+the plugin itself never runs privileged commands.
+
 ### 1. Install the `hid-fanatecff` driver
 
 The driver is in the AUR as `hid-fanatecff-dkms`. Install it with Omarchy's
@@ -68,25 +71,46 @@ The package builds the `hid_fanatec` kernel module with DKMS and installs a
 udev rule (`/usr/lib/udev/rules.d/99-fanatec.rules`). Upstream project and
 supported-device list: <https://github.com/gotzl/hid-fanatecff>.
 
-Reboot (or replug the base) once it's installed, then check that the driver
-loaded and sees your base:
+### 2. Narrow the driver's USB rule
+
+The packaged udev rule makes the wheel's USB and `hidraw` device nodes
+**writable by every local account** (`MODE="0666"`), so another user on the
+machine could reset the wheel or detach its driver. See
+[Security notes](#security-notes). This step overrides that one line so only
+members of `games` (the group you join in step 3, and the one this plugin needs
+anyway) can open those nodes. It copies the installed rule and changes only the
+`0666` line:
 
 ```bash
-omarchy pkg present hid-fanatecff-dkms && echo "package installed"
-lsmod | grep hid_fanatec                        # the module is loaded
-ls /sys/class/ftec_tuning/                      # one entry per tuning-capable base
-cat /sys/bus/hid/drivers/fanatec/*/wheel_id     # id of the attached rim
+sed 's|^SUBSYSTEMS=="usb", ATTRS{idVendor}=="0eb7", MODE="0666"|SUBSYSTEMS=="usb", ATTRS{idVendor}=="0eb7", GROUP="games", MODE="0660"|' \
+  /usr/lib/udev/rules.d/99-fanatec.rules | sudo tee /etc/udev/rules.d/99-fanatec.rules >/dev/null
+sudo udevadm control --reload
 ```
 
-DKMS rebuilds the module for new kernels as part of `omarchy update`. If the
-module is missing after a kernel update, reinstall the package to force a
-rebuild, then reboot:
+A file with the same name in `/etc/udev/rules.d/` takes precedence over the
+packaged one. Confirm that exactly one line differs:
 
 ```bash
-omarchy pkg drop hid-fanatecff-dkms && omarchy pkg aur add hid-fanatecff-dkms
+diff /usr/lib/udev/rules.d/99-fanatec.rules /etc/udev/rules.d/99-fanatec.rules
 ```
 
-### 2. Add yourself to the `games` group
+You should see line 5 change from `MODE="0666"` to `GROUP="games", MODE="0660"`.
+If `diff` prints nothing, the packaged rule has changed upstream and the `sed`
+didn't match: stop, and check the packaged file before going on.
+
+The override is a copy, so after a driver package upgrade, re-run this step to
+pick up any new upstream rules. To undo it, delete the file and reload:
+
+```bash
+sudo rm /etc/udev/rules.d/99-fanatec.rules && sudo udevadm control --reload
+```
+
+Tested on one machine with AMS2 (Steam/Proton): steering, force feedback and
+this plugin's tuning controls all worked with the narrowed rule. If a game or
+tool that talks to the wheel directly stops working, check that the user
+running it is in `games`.
+
+### 3. Add yourself to the `games` group
 
 The driver's udev rule makes the tuning files writable by the **`games`**
 group, not by regular users. Without it the widget is read-only and shows a
@@ -96,20 +120,45 @@ note saying so.
 sudo usermod -aG games "$USER"
 ```
 
-Then **reboot**. A plain log-out is often not enough: the long-running
-`systemd --user` manager that your desktop session inherits its groups from
-can survive a log-out and keeps the old group list.
+### 4. Reboot and check
 
-Check that it took effect:
+**Reboot.** This loads the driver, applies the rule to the connected wheel, and
+gives your session the new group. A plain log-out is often not enough: the
+long-running `systemd --user` manager that your desktop session inherits its
+groups from can survive a log-out and keeps the old group list. (If you only
+re-ran step 2 on an already-working setup, replugging the wheelbase is enough.)
+
+Then check each part:
 
 ```bash
-id | grep -o games                                  # prints "games"
+omarchy pkg present hid-fanatecff-dkms && echo "package installed"
+lsmod | grep hid_fanatec                        # the module is loaded
+ls /sys/class/ftec_tuning/                      # one entry per tuning-capable base
+id | grep -o games                              # prints "games"
 [ -w /sys/class/ftec_tuning/*/SLOT ] && echo writable
 ```
 
-If `id` doesn't list `games`, the session hasn't picked the group up yet.
+And confirm the wheel's device nodes are no longer world-writable:
 
-### 3. Install the plugin
+```bash
+for n in /dev/hidraw*; do udevadm info -a -n "$n" | grep -q 'idVendor}=="0eb7"' && stat -c '%a %U:%G %n' "$n"; done
+lsusb | awk '/0eb7/{gsub(":","",$4); print "/dev/bus/usb/"$2"/"$4}' | xargs stat -c '%a %U:%G %n'
+```
+
+Both should print `660 root:games`. `666 root:root` means the override isn't in
+effect: re-run step 2 and replug the wheelbase. (The wheel's `/dev/input/event*`
+node isn't covered by this rule and stays as it was.)
+
+If `id` doesn't list `games`, the session hasn't picked the group up yet.
+DKMS rebuilds the module for new kernels as part of `omarchy update`. If the
+module is missing after a kernel update, reinstall the package to force a
+rebuild, then reboot:
+
+```bash
+omarchy pkg drop hid-fanatecff-dkms && omarchy pkg aur add hid-fanatecff-dkms
+```
+
+### 5. Install the plugin
 
 ```bash
 omarchy plugin add https://github.com/DGBooth/omarchy-fanatec-tuning-menu.git
@@ -145,8 +194,15 @@ removal, open `shell.json` and delete the object with
 `"id": "io.github.dgbooth.fanatec-tuning-menu"` from its bar section. Leave it
 in place if you plan to reinstall, and your nicknames will come back.
 
-The `hid-fanatecff` driver and your `games` group membership are separate from
-the plugin and aren't changed by any of this.
+The `hid-fanatecff` driver, your `games` group membership and the udev override
+from setup step 2 are separate from the plugin and aren't changed by any of this.
+Delete `/etc/udev/rules.d/99-fanatec.rules` yourself if you also remove the
+driver.
+
+`omarchy plugin disable` followed by `omarchy plugin enable` gives the widget a
+fresh bar entry, so nicknames and options set earlier are reset. Disable and
+re-enable leave the plugin's files alone, and your wheelbase settings are
+untouched.
 
 ## Using it
 
@@ -308,16 +364,20 @@ want to be sure.
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="0eb7", MODE="0666"
 ```
 
-That makes the matching USB device nodes writable by every local account, not
-just members of `games`. While a wheel is connected, any user on the machine could
-reset it or detach its driver, which would disrupt the controller whether or
-not this plugin is installed. On a single-user desktop the practical risk is
-low; on a shared machine it is worth knowing about. The rule belongs to the
-upstream driver ([gotzl/hid-fanatecff](https://github.com/gotzl/hid-fanatecff)),
-and the rule file itself carries a comment that it should be narrowed down. This
-plugin doesn't install or change it. A file with the same name in
-`/etc/udev/rules.d/` takes precedence over the packaged one, so you can adjust it
-locally; if you do, check afterwards that your wheel and your games still work.
+That makes the matching USB and `hidraw` device nodes writable by every local
+account, not just members of `games`. While a wheel is connected, any user on the
+machine could reset it or detach its driver, which would disrupt the controller
+whether or not this plugin is installed. The rule belongs to the upstream driver
+([gotzl/hid-fanatecff](https://github.com/gotzl/hid-fanatecff)), whose rule file
+carries a comment that it should be narrowed down. This plugin doesn't install or
+change it.
+
+The setup instructions deal with it as a required step instead of leaving it as
+an option. [Step 2](#2-narrow-the-drivers-usb-rule) installs a local override
+that restricts those nodes to the `games` group, and
+[step 4](#4-reboot-and-check) has commands that confirm the active rule is
+restricted (`660 root:games`). Anyone who skips step 2 still has the upstream
+rule, and the exposure above.
 
 This plugin only works with a Fanatec wheelbase and the `hid-fanatecff` driver,
 so anyone using it already has the driver and its udev rule. The plugin adds no
